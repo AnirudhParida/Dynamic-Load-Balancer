@@ -78,10 +78,11 @@ Distributes requests evenly among available servers, ensuring balanced load dist
 # Queue Analysis
 
 1.**FIFO Queue**:
-Simple and fair but may lead to longer wait times for critical requests. 2.**Priority Queue**:
-Ensures critical requests are handled quickly but may cause delays for less important requests. 3.**Round-Robin Queue**:
-Balances load effectively but does not account for server performance variations.
+   Simple and fair but may lead to longer wait times for critical requests.
+2.**Priority Queue**:
+   Ensures critical requests are handled quickly but may cause delays for less important requests.
+3.**Round-Robin Queue**:
+   Balances load effectively but does not account for server performance variations.
 
 ## Conclusion
-
-    The Advanced Node.js Load Balancer project demonstrates a comprehensive implementation of a dynamic load balancer with advanced queue management and additional features to ensure efficient and reliable request handling. The setup and usage instructions, detailed analysis of different queuing strategies, and innovative ideas for further enhancement are all provided in this documentation.
+   The Advanced Node.js Load Balancer project demonstrates a comprehensive implementation of a dynamic load balancer with advanced queue management and additional features to ensure efficient and reliable request handling. The setup and usage instructions, detailed analysis of different queuing strategies, and innovative ideas for further enhancement are all provided in this documentation.
