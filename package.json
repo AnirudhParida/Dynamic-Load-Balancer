@@ -1,0 +1,19 @@
+{
+  "name": "dynamic-load-balancer",
+  "version": "1.0.0",
+  "description": "The Advanced Node.js Load Balancer is a robust system designed to dynamically route incoming API requests to various endpoints based on multiple criteria. This project implements advanced queue management strategies to optimize performance and ensure reliability. Key features include health checks, rate limiting, caching, and failover mechanisms.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.0",
+    "morgan": "^1.10.0",
+    "queue": "^7.0.0"
+  }
+}
