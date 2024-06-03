@@ -13,7 +13,11 @@
     "axios": "^1.7.2",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.0",
+    "http": "^0.0.1-security",
+    "http-proxy": "^1.18.1",
+    "http-proxy-middleware": "^3.0.0",
     "morgan": "^1.10.0",
+    "nodemon": "^3.1.2",
     "queue": "^7.0.0"
   }
 }

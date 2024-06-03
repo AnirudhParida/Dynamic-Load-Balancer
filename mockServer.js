@@ -1,22 +1,59 @@
 const express = require('express');
-const app = express();
-const PORT = process.argv[2] || 4000;
+const net = require('net');
+//const serverConfig = require('./config.json').servers;
 
-app.use(express.json());
+const serverConfig = [
+    { host: 'localhost', port: 27017, type: 'fast'},
+    { host: 'localhost', port: 27018, type: 'slow'},
+    { host: 'localhost', port: 27019, type: 'fast'},
+    { host: 'localhost', port: 27020, type: 'slow'},
+    { host: 'localhost', port: 27021, type: 'fast'}
+];
 
-// Simulate different response times
-app.get('/api/fast', (req, res) => {
-    setTimeout(() => {
-        res.send({ message: 'Fast response' });
-    }, 100);
-});
+const serverConnections = {};
 
-app.get('/api/slow', (req, res) => {
-    setTimeout(() => {
-        res.send({ message: 'Slow response' });
-    }, 1000);
-});
+//create multiple instances of express in order to create multiple servers use list containg arguments as host and port
 
-app.listen(PORT, () => {
-    console.log(`Mock server running on port ${PORT}`);
+const createServer = (host,port,type)=>{
+
+    const app = express();
+    let connections = 0;
+
+    serverConnections[port] = {host,port,type,open_connections:connections};
+
+    app.use(express.json());
+
+    app.get('/', (req, res) => {
+        type = serverConfig.find(server => server.port === port).type;
+        //console.log(`Request to ${host}:${port} with ${type} response`);
+        const responseTime = type === 'fast' ? 100 : 3000; // Fast: 100ms, Slow: 3000ms
+        //console.log(`Request to ${host}:${port} with ${type} response will take ${responseTime}ms`);
+        setTimeout(() => {
+            res.send(`Hello from MockServer at ${host}:${port} with ${type} response`);
+        }, responseTime);
+    });
+
+    
+    app.get('/connections',(req,res)=>{
+        res.json({host, port, open_connections: connections});
+    })
+    
+    const currentServer=app.listen(port,()=>{
+        console.log(`Server running on ${host}:${port}`);
+    });
+
+    currentServer.on('connection', (socket) => {
+        connections++;
+        serverConnections[port].open_connections = connections;
+        console.log(`New connection established on ${host}:${port}. Total connections: ${connections}`);
+    
+        socket.on('close', () => {
+            connections--;
+            serverConnections[port].open_connections = connections;
+            console.log(`Connection closed on ${host}:${port}. Total connections: ${connections}`);
+        });
+    });
+}
+serverConfig.forEach((server)=>{
+    createServer(server.host,server.port);
 });

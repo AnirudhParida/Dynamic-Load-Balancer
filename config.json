@@ -1,0 +1,14 @@
+{
+    "servers": [
+        {
+            "type": "fast",
+            "host": "localhost",
+            "port": 27017
+        },
+        {
+            "type": "slow",
+            "host": "localhost",
+            "port": 27018
+        }
+    ]
+}
