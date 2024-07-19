@@ -3,11 +3,11 @@ const net = require('net');
 //const serverConfig = require('./config.json').servers;
 
 const serverConfig = [
-    { host: 'localhost', port: 27017, type: 'fast'},
-    { host: 'localhost', port: 27018, type: 'slow'},
-    { host: 'localhost', port: 27019, type: 'fast'},
-    { host: 'localhost', port: 27020, type: 'slow'},
-    { host: 'localhost', port: 27021, type: 'fast'}
+    { host: 'localhost', port: 27017, type: 'fast',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27018, type: 'slow',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27019, type: 'fast',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27020, type: 'slow',activeConnections: 0,healthy:false},
+    { host: 'localhost', port: 27021, type: 'fast',activeConnections: 0,healthy:true},
 ];
 
 const serverConnections = {};
@@ -33,7 +33,18 @@ const createServer = (host,port,type)=>{
         }, responseTime);
     });
 
-    
+    app.get('/health',(req,res)=>{
+        const curr_server = serverConfig.find(server => server.port===port);
+        const health = curr_server.healthy
+        if(health){
+            res.status(200).json({status:'UP'});
+        }
+        else{
+            res.status(500).json({status:'DOWN',message:'Server is down',port:port});
+        }
+        //res.status(200).json(health);
+    })
+
     app.get('/connections',(req,res)=>{
         res.json({host, port, open_connections: connections});
     })

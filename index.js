@@ -3,13 +3,15 @@ const morgan = require('morgan');
 const axios = require('axios');
 //const serverConfig = require('./config.json').servers;
 const serverConfig = [
-    { host: 'localhost', port: 27017, type: 'fast'},
-    { host: 'localhost', port: 27018, type: 'slow'},
-    { host: 'localhost', port: 27019, type: 'fast'},
-    { host: 'localhost', port: 27020, type: 'slow'},
-    { host: 'localhost', port: 27021, type: 'fast'}
+    { host: 'localhost', port: 27017, type: 'fast',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27018, type: 'slow',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27019, type: 'fast',activeConnections: 0,healthy:true},
+    { host: 'localhost', port: 27020, type: 'slow',activeConnections: 0,healthy:false},
+    { host: 'localhost', port: 27021, type: 'fast',activeConnections: 0,healthy:true},
 ];
+
 //const roundRobin = require('./queueSelection');
+
 const path = require('path');
 const fs = require('fs');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -77,31 +79,74 @@ const PORT = 3000;
 
 // Routing logic based on custom criteria
 
+const healthCheckInterval = 10000;
+
+const serverHealthCheck= async (server)=>{
+    try{
+        const response = await axios.get(`http://${server.host}:${server.port}/health`);
+        if(response.status===200){
+            // const data = response.data;
+            // server.healthy = data.status === 'UP';
+            console.log(`Health check for ${server.host}:${server.port} is ${server.healthy}`);
+        }else{
+            //server.healthy = false;
+            console.error(`Error fetching health from ${server.host}:${server.port}`);
+        }
+    }catch(error){
+        //server.healthy = false;
+        console.error(`Error fetching health from catch error ${server.host}:${server.port}`);
+    }
+}
+
+const performhealthChecks = ()=>{
+    serverConfig.forEach(server=>{
+        setInterval(()=>serverHealthCheck(server),healthCheckInterval);
+    });
+}
+
+//performhealthChecks();
+
 let currentServer = 0;
-const selectServer = (req) => {
-    //addition custom logic based on payload size
-    const targetServer = serverConfig[currentServer];
-    currentServer = (currentServer + 1) % serverConfig.length;
-    //console.log(`Routing to ${targetServer.host}:${targetServer.port}`);
-    return targetServer;
+
+const selectServer = () => {
+    for (let i = 0; i < serverConfig.length; i++) {
+        currentServer = (currentServer + 1) % serverConfig.length;
+        const targetServer = serverConfig[currentServer];
+        if (targetServer.healthy) {
+            return targetServer;
+        }
+    }
+    throw new Error('No healthy servers available');
 };
 
-// Function to route based on payload size 
-const routeBasedOnPayloadSize = (req) => {
-    if (req.body && JSON.stringify(req.body).length > 100) {
-        return serverConfig[4]; // Route to a specific server for large payloads
+const getServerWithFewestConnections = () => {
+    let lowestConnectionsServer = serverConfig[0];
+    for (const server of serverConfig) {
+        if (server.healthy && server.activeConnections < lowestConnectionsServer.activeConnections) {
+            lowestConnectionsServer = server;
+        }
     }
-    return selectServer(req); // Otherwise, Round robin server
+    return lowestConnectionsServer;
+};
+
+const routeBasedOnPayloadSize = (payload) => {
+    if (payload.length>5) {
+        // return getServerWithFewestConnections();
+        return serverConfig[0];
+    }
+    return selectServer();
 };
 
 app.use((req, res, next) => {
     const startTime = Date.now();
-    const payloadSize = req.body ? JSON.stringify(req.body).length : 0;
-    console.log(`Payload size: ${payloadSize}`);
+    const payloadSize = 'lorem ipsum'
+    // console.log(`Payload size: ${payloadSize}`);
     const method_type = req.method;
-    console.log(`Request to ${req.url} with ${method_type} method`);
+    // console.log(`Request to ${req.url} with ${method_type} method`);
     //console.log(`Request to ${req.url}`);
-    const targetServer = routeBasedOnPayloadSize(req);
+
+    const targetServer = routeBasedOnPayloadSize(payloadSize);
+    console.log(`Routing to ${targetServer.host}:${targetServer.port}`);
     //console.log(`Routing to ${targetServer.host}:${targetServer.port}`);
     const targetUrl = `http://${targetServer.host}:${targetServer.port}`;
 
@@ -132,14 +177,12 @@ app.use((req, res, next) => {
     proxy(req, res, next);
 });
 
-// Define a POST endpoint to test payload routing
-app.post('test/', (req, res) => {
-    // Log the received payload
-    console.log('Received payload:', req.body);
 
-    // Send a response
-    res.send('Payload received successfully');
+app.post('/', (req, res) => {
+    res.send('Hello from Load Balancer');
 });
+
+
 
 app.get('/connections', async (req, res) => {
     const connectionsData = {};
